@@ -1,0 +1,19 @@
+cd C:\Users\Adrian\source\repos\ChattingRoom\ChattingRoom
+
+
+Server端:
+
+csc  ChatServer.cs  ChatLib.cs
+
+
+
+Client端:
+
+csc WinChatClient.cs  FormChatClient.cs  FormChatClient.Designer.cs  ChatLib.cs
+
+
+
+
+執行
+
+ChatServer
