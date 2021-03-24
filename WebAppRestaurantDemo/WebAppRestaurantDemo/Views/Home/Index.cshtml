@@ -1,0 +1,378 @@
+﻿@model Tuple<IEnumerable<SelectListItem>, IEnumerable<SelectListItem>, IEnumerable<SelectListItem>>
+@{
+    ViewBag.Title = "Index";
+}
+<script src="~/Scripts/jquery-3.5.1.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#Item").val(0);
+        $("#Item").change(function () {
+            var itemId = $("#Item").val();
+            GetItemUnitPrice(itemId);
+        });
+
+        $("input[type=text]").change(function () {
+            CalculateSubTotal();
+        });
+
+        $("input[type=text]").keyup(function () {
+            CalculateBalence();
+        });
+
+        $("#btnAddToList").click(function () {
+            AddToTheItemList();
+        });
+
+        $("#btnPayment").click(function () {
+            FinalPayment();
+        });
+
+    });
+
+
+    function FinalPayment() {
+        var objOrderViewModel = {};
+        var ListOfOrderDetailViewModel = new Array();
+        //OrderDetailViewModel
+        objOrderViewModel.CustomerId = $("#Customer").val();
+        objOrderViewModel.PaymentTypeId = $("#PaymentType").val();
+        objOrderViewModel.FinalTotal = $("#txtFinalTotal").val();
+
+        $("#tblRestaurantListItems").find("tr:gt(0)").each(function () {
+            var OrderDetailViewModel = {};
+            OrderDetailViewModel.Total = parseFloat($(this).find("td:eq(5)").text());
+            OrderDetailViewModel.ItemId = parseFloat($(this).find("td:eq(0)").text());
+            OrderDetailViewModel.UnitPrice = parseFloat($(this).find("td:eq(2)").text());
+            OrderDetailViewModel.Quantity = parseFloat($(this).find("td:eq(3)").text());
+            OrderDetailViewModel.Discount = parseFloat($(this).find("td:eq(4)").text());
+            ListOfOrderDetailViewModel.push(OrderDetailViewModel);
+        });
+        objOrderViewModel.ListOfOrderDetailViewModel = ListOfOrderDetailViewModel;
+
+        $.ajax({
+            async: true,
+            type: 'POST',
+            dataType: 'JSON',
+            contentType: 'application/json; charset=UTF-8',
+            data: JSON.stringify(objOrderViewModel),
+            url: '/Home/Index',
+
+            success: function (data) {
+                alert(data);
+            },
+            error: function () {
+                alert("There some problem to adding the data.");
+            }
+        });
+
+    }
+
+    function RemoveItem(itemid) {
+        $(itemid).closest('tr').remove();
+    }
+
+    function AddToTheItemList() {
+        var tblItemList = $("#tblRestaurantListItems")
+        var UnitPrice = $("#txtUnitPrice").val();
+        var Quantity = $("#txtQuantity").val();
+        var Discount = $("#txtDiscount").val();
+        var ItemId = $("#Item").val();
+        var ItemName = $("#Item option:selected").text();
+        var Total = (UnitPrice * Quantity) - Discount;
+
+        var ItemList = "<tr><td hidden>" +
+            ItemId +
+            "</td><td>" +
+            ItemName +
+            "</td><td>" +
+            parseFloat(UnitPrice).toFixed(2) +
+            "</td><td>" +
+            parseFloat(Quantity).toFixed(2) +
+            "</td><td>" +
+            parseFloat(Discount).toFixed(2) +
+            "</td><td>" +
+            parseFloat(Total).toFixed(2) +
+            "</td><td> <input type='button' value='清除' name='remove' class='btn btn-danger' onclick='RemoveItem(this)'/> </tr></tr>";
+
+        tblItemList.append(ItemList);
+        CalculateFinalTotal();
+        ResetItem();
+    }
+
+
+    function ResetItem() {
+        $("#txtUnitPrice").val('0.00');
+        $("#txtQuantity").val('0.00');
+        $("#txtDiscount").val('0.00');
+        $("#Item").val(0);
+        $("#txtTotal").val('0.00');
+    }
+
+    function CalculateFinalTotal() {
+        $("#txtFinalTotal").val("0.00");
+        var FinalTotal = 0.00;
+        $("#tblRestaurantListItems").find("tr:gt(0)").each(function () {
+            var Total = parseFloat($(this).find("td:eq(5)").text());
+            FinalTotal += Total;
+        });
+        $("#txtFinalTotal").val(parseFloat(FinalTotal).toFixed(2));
+        $("#txtPaymentTotal").val(parseFloat(FinalTotal).toFixed(2));
+        $("#txtBalence").val(parseFloat(FinalTotal).toFixed(2));
+        
+    }
+
+    function CalculateBalence() {
+        var FinalAmount = $("#txtPaymentTotal").val();
+        var PaymentAmount = $("#txtPaymentAmount").val();
+        var ReturnAmount = $("#txtReturnTotal").val();
+        var BalenceAmount = parseFloat(FinalAmount) - parseFloat(PaymentAmount) + parseFloat(ReturnAmount);
+        $("#txtBalence").val(parseFloat(BalenceAmount).toFixed(2));
+        if (parseFloat(BalenceAmount) == 0) {
+            $("#btnPayment").removeAttr("disabled");
+        } else {
+            $("#btnPayment").attr("disabled", "disabled");
+        }
+    }
+
+    function CalculateSubTotal() {
+        var UnitPrice = $("#txtUnitPrice").val();
+        var Quantity = $("#txtQuantity").val();
+        var Discount = $("#txtDiscount").val();
+
+        var Total = (UnitPrice * Quantity) - Discount;
+
+        $("#txtTotal").val(parseFloat(Total).toFixed(2));
+    }
+
+
+    function GetItemUnitPrice(itemId) {
+        $.ajax({
+            async: true,
+            type: 'GET',
+            dataType: 'JSON',
+            contentType: 'application/json; charset=UTF-8',
+            data: { itemId: itemId },
+            url: '/Home/getItemUnitPrice',
+
+            success: function (data) {
+                $("#txtUnitPrice").val(parseFloat(data).toFixed(2));
+            },
+            error: function () {
+                alert("There some problem to get the unit price.");
+            }
+        });
+    }
+
+</script>
+
+<style>
+
+    /*.modal{
+        text-align: center;
+        padding: 0!important;
+    }
+
+    .modal:before{
+        content: '';
+        display: inline-block;
+        height: 100%;
+        vertical-align: middle;
+        margin-right: -4px;
+    }
+
+    .modal-dialog{
+        display: inline-block;
+        text-align: left;
+        vertical-align: middle;
+    }*/
+
+    fieldset {
+        border: 1px, solid #ddd !important;
+        margin: 0;
+        min-width: 0;
+        padding: 10px;
+        position: relative;
+        border-radius: 8px;
+        background-color: #61bfad;
+        padding-left: 10px !important;
+    }
+
+    legend {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 0px;
+        width: 15%;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 5px 5px 5px 10px;
+        background-color: #ff8b8b;
+    }
+</style>
+
+
+<fieldset style="margin-top: 10px">
+    <legend>
+        結帳資訊
+    </legend>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="from-group">
+                    顧客 :
+                    @Html.DropDownList("Customer", new SelectList(Model.Item1, "Value", "Text"),
+                            new { @class = "frorm-control" })
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="from-group">
+                    付款方式 :
+                    @Html.DropDownList("PaymentType", new SelectList(Model.Item3, "Value", "Text"),
+                            new { @class = "frorm-control" })
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="from-group">
+                    付款金額 :
+                    <input style="text-align: right" type="text" value="0.00" name="FinalTotal" readonly="readonly" id="txtFinalTotal" class="form-control" />
+                </div>
+            </div>
+        </div>
+    </div>
+</fieldset>
+
+<fieldset style="margin-top: 20px">
+    <legend>選擇餐點</legend>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    項目 :
+                    @Html.DropDownList("Item", new SelectList(Model.Item2, "Value", "Text"),
+                                new { @class = "frorm-control" })
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="form-group">
+                    單價 :
+                    <input style="text-align: right" type="text" readonly="readonly" id="txtUnitPrice" value="0.00" name="UnitPrice" class="form-control" />
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="form-group">
+                    數量 :
+                    <input style="text-align: right" type="text" id="txtQuantity" value="0.00" name="Quantity" class="form-control" />
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    折扣 :
+                    <input style="text-align: right" type="text" id="txtDiscount" value="0.00" name="Discount" class="form-control" />
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="form-group">
+                    折後價格 :
+                    <input style="text-align: right" type="text" readonly="readonly" id="txtTotal" value="0.00" name="Total" class="form-control" />
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="form-group">
+                    <input type="button" style="margin-top: 25px" value="加入購物車" name="AddToList" id="btnAddToList" class="btn btn-success" />
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</fieldset>
+
+<fieldset style="margin-top: 20px">
+    <legend>購物車清單</legend>
+    <table style="width: 100%" id="tblRestaurantListItems">
+        <thead>
+            <tr>
+                <th hidden>
+                    Item Id
+                </th>
+                <th>
+                    項目名稱
+                </th>
+                <th>
+                    單價
+                </th>
+                <th>
+                    數量
+                </th>
+                <th>
+                    折價
+                </th>
+                <th>
+                    折後價格
+                </th>
+                <th>
+                    動作
+                </th>
+            </tr>
+        </thead>
+    </table>
+</fieldset>
+
+<div style="margin-top: 50px">
+    <input data-backdrop="static" data-keydrop="false"
+           data-toggle="modal" data-target="#divPayment" style="float: right" type="button" value="結帳" name="checkout" id="btnCheckOut" class="btn btn-primary" />
+</div>
+
+<div id="divPayment" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Payment</h4>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <div class="row">
+                        <div class="form-group col-md-6">
+                            應付額 :
+                            <input style="text-align: right" type="text" id="txtPaymentTotal" readonly="readonly" value="0.00" class="form-control" />
+                        </div>
+                        <div class="form-group col-md-6">
+                            支付額 :
+                            <input style="text-align: right" type="text" id="txtPaymentAmount" value="0.00" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group col-md-6">
+                            找錢 :
+                            <input style="text-align: right" type="text" id="txtReturnTotal" value="0.00" class="form-control" />
+                        </div>
+                        <div class="form-group col-md-6">
+                            尚未付清 :
+                            <input style="text-align: right" type="text" id="txtBalence" readonly="readonly" value="0.00" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-success" id="btnPayment" value="Payment">付款</button>
+                <button class="btn btn-danger" data-dismiss="modal" id="btnClose" value="Close">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
